@@ -4,10 +4,9 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
+import android.view.Surface.ROTATION_0
+import androidx.camera.core.*
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -50,7 +49,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }))
             }
-            get.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, analyzer,preview)
+            get.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, analyzer,initImageCapture(),preview)
         },ContextCompat.getMainExecutor(this))
+    }
+    private fun initImageCapture():ImageCapture{
+        return ImageCapture.Builder()
+            .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
+            .setTargetRotation(ROTATION_0)
+            .build()
     }
 }
