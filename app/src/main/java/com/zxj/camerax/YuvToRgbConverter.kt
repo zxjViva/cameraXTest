@@ -5,11 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.media.Image
-import android.renderscript.Allocation
-import android.renderscript.Element
-import android.renderscript.RenderScript
-import android.renderscript.ScriptIntrinsicYuvToRGB
-import android.renderscript.Type
+import android.renderscript.*
 import java.nio.ByteBuffer
 
 /**
@@ -51,7 +47,7 @@ class YuvToRgbConverter(context: Context) {
 
         // Get the YUV data in byte array form using NV21 format
         imageToByteBuffer(image, yuvBuffer.array())
-
+//        val desc =  rotateYUVDegree270AndMirror(yuvBuffer.array(), image.cropRect.width(), image.cropRect.height())
         // Ensure that the RenderScript inputs and outputs are allocated
         if (!::inputAllocation.isInitialized) {
             // Explicitly create an element with type NV21, since that's the pixel format we use
@@ -68,8 +64,55 @@ class YuvToRgbConverter(context: Context) {
         scriptYuvToRgb.forEach(outputAllocation)
         outputAllocation.copyTo(output)
     }
+    private fun rotateYUVDegree270AndMirror(data: ByteArray, imageWidth: Int, imageHeight: Int): ByteArray {
+        val yuv = ByteArray(imageWidth * imageHeight * 3 / 2)
+        // Rotate and mirror the Y luma
+        var i = 0
+        var maxY = 0
+        for (x in imageWidth - 1 downTo 0) {
+            maxY = imageWidth * (imageHeight - 1) + x * 2
+            for (y in 0 until imageHeight) {
+                yuv[i] = data[maxY - (y * imageWidth + x)]
+                i++
+            }
+        }
+        // Rotate and mirror the U and V color components
+        val uvSize = imageWidth * imageHeight
+        i = uvSize
+        var maxUV = 0
+        var x = imageWidth - 1
+        while (x > 0) {
+            maxUV = imageWidth * (imageHeight / 2 - 1) + x * 2 + uvSize
+            for (y in 0 until imageHeight / 2) {
+                yuv[i] = data[maxUV - 2 - (y * imageWidth + x - 1)]
+                i++
+                yuv[i] = data[maxUV - (y * imageWidth + x)]
+                i++
+            }
+            x = x - 2
+        }
+        return yuv
+    }
 
-    private fun imageToByteBuffer(image: Image, outputBuffer: ByteArray) {
+    fun rotateYUV240SP(src: ByteArray, des: ByteArray, width: Int, height: Int) {
+        val wh = width * height
+        //旋转Y
+        var k = 0
+        for (i in 0 until width) {
+            for (j in 0 until height) {
+                des[k] = src[width * j + i]
+                k++
+            }
+        }
+        for (i in 0 until width / 2) {
+            for (j in 0 until height / 2) {
+                des[k] = src[wh + width / 2 * j + i]
+                des[k + width * height / 4] = src[wh * 5 / 4 + width / 2 * j + i]
+                k++
+            }
+        }
+    }
+    fun imageToByteBuffer(image: Image, outputBuffer: ByteArray) {
         assert(image.format == ImageFormat.YUV_420_888)
 
         val imageCrop = image.cropRect
@@ -134,10 +177,10 @@ class YuvToRgbConverter(context: Context) {
                 imageCrop
             } else {
                 Rect(
-                    imageCrop.left / 2,
-                    imageCrop.top / 2,
-                    imageCrop.right / 2,
-                    imageCrop.bottom / 2
+                        imageCrop.left / 2,
+                        imageCrop.top / 2,
+                        imageCrop.right / 2,
+                        imageCrop.bottom / 2
                 )
             }
 
@@ -165,7 +208,7 @@ class YuvToRgbConverter(context: Context) {
             for (row in 0 until planeHeight) {
                 // Move buffer position to the beginning of this row
                 planeBuffer.position(
-                    (row + planeCrop.top) * rowStride + planeCrop.left * pixelStride)
+                        (row + planeCrop.top) * rowStride + planeCrop.left * pixelStride)
 
                 if (pixelStride == 1 && outputStride == 1) {
                     // When there is a single stride value for pixel and output, we can just copy
