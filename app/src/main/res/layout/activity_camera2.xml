@@ -5,18 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".CameraViewActivity">
-    <androidx.camera.view.CameraView
-        app:lensFacing="back"
-        android:id="@+id/cameraView"
-        app:flash="off"
+    <androidx.camera.view.PreviewView
+        app:scaleType="fillCenter"
+        android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
     <ImageView
+        android:src="@color/design_default_color_secondary"
         android:id="@+id/p_in_p"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_width="100dp"
-        android:layout_height="100dp"/>
+        android:layout_width="200dp"
+        android:layout_height="300dp"/>
     <Button
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
